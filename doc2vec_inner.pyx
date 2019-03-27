@@ -222,7 +222,7 @@ cdef unsigned long long fast_document_dmc_neg(
 
 cdef init_d2v_config(Doc2VecConfig *c, model, alpha, learn_doctags, learn_words, learn_hidden,
                      train_words=False, work=None, neu1=None, word_vectors=None, word_locks=None, doctag_vectors=None,
-                     doctag_locks=None, docvecs_count=0):
+                     doctag_locks=None, docvecs_count=0, compute_loss=False):
     c[0].hs = model.hs
     c[0].negative = model.negative
     c[0].sample = (model.vocabulary.sample != 0)
@@ -236,6 +236,7 @@ cdef init_d2v_config(Doc2VecConfig *c, model, alpha, learn_doctags, learn_words,
     c[0].vector_size = model.docvecs.vector_size
     c[0].workers = model.workers
     c[0].docvecs_count = docvecs_count
+    c[0].compute_loss = compute_loss
 
     c[0].window = model.window
     c[0].expected_doctag_len = model.dm_tag_count
