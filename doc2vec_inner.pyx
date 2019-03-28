@@ -53,6 +53,7 @@ cdef void fast_document_dbow_hs(
         f = our_dot(&size, &context_vectors[row1], &ONE, &syn1[row2], &ONE)
         if f <= -MAX_EXP or f >= MAX_EXP:
             continue
+
         f = EXP_TABLE[<int>((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]
         g = (1 - word_code[b] - f) * alpha
         our_saxpy(&size, &g, &syn1[row2], &ONE, work, &ONE)
@@ -127,6 +128,7 @@ cdef void fast_document_dm_hs(
             sgn  = -1.*(-sgn * f)
             loss += log(1.+exp(sgn))
         printf("%f\n", loss)
+        # exit(loss)
         f = EXP_TABLE[<int>((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]
         g = (1 - word_code[b] - f) * alpha
         our_saxpy(&size, &g, &syn1[row2], &ONE, work, &ONE)
