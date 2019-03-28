@@ -2599,13 +2599,12 @@ static unsigned PY_LONG_LONG __pyx_f_6gensim_6models_13doc2vec_inner_fast_docume
  *     REAL_t *neu1, REAL_t *syn1, const REAL_t alpha, REAL_t *work,
  */
 
-static void __pyx_f_6gensim_6models_13doc2vec_inner_fast_document_dm_hs(__pyx_t_5numpy_uint32_t const *__pyx_v_word_point, __pyx_t_5numpy_uint8_t const *__pyx_v_word_code, int __pyx_v_word_code_len, __pyx_t_6gensim_6models_14word2vec_inner_REAL_t *__pyx_v_neu1, __pyx_t_6gensim_6models_14word2vec_inner_REAL_t *__pyx_v_syn1, __pyx_t_6gensim_6models_14word2vec_inner_REAL_t const __pyx_v_alpha, __pyx_t_6gensim_6models_14word2vec_inner_REAL_t *__pyx_v_work, int const __pyx_v_size, int __pyx_v_learn_hidden, int __pyx_v_compute_loss) {
+static void __pyx_f_6gensim_6models_13doc2vec_inner_fast_document_dm_hs(__pyx_t_5numpy_uint32_t const *__pyx_v_word_point, __pyx_t_5numpy_uint8_t const *__pyx_v_word_code, int __pyx_v_word_code_len, __pyx_t_6gensim_6models_14word2vec_inner_REAL_t *__pyx_v_neu1, __pyx_t_6gensim_6models_14word2vec_inner_REAL_t *__pyx_v_syn1, __pyx_t_6gensim_6models_14word2vec_inner_REAL_t const __pyx_v_alpha, __pyx_t_6gensim_6models_14word2vec_inner_REAL_t *__pyx_v_work, int const __pyx_v_size, int __pyx_v_learn_hidden, CYTHON_UNUSED int __pyx_v_compute_loss) {
   PY_LONG_LONG __pyx_v_b;
   PY_LONG_LONG __pyx_v_row2;
   __pyx_t_6gensim_6models_14word2vec_inner_REAL_t __pyx_v_f;
   __pyx_t_6gensim_6models_14word2vec_inner_REAL_t __pyx_v_g;
-  __pyx_t_6gensim_6models_14word2vec_inner_REAL_t __pyx_v_loss;
-  __pyx_t_6gensim_6models_14word2vec_inner_REAL_t __pyx_v_sgn;
+  CYTHON_UNUSED __pyx_t_6gensim_6models_14word2vec_inner_REAL_t __pyx_v_loss;
   int __pyx_t_1;
   int __pyx_t_2;
   PY_LONG_LONG __pyx_t_3;
@@ -2687,63 +2686,17 @@ static void __pyx_f_6gensim_6models_13doc2vec_inner_fast_document_dm_hs(__pyx_t_
  */
     }
 
-    /* "gensim/models/doc2vec_inner.pyx":125
- * 
- *         # printf("%f\n", np.sum(((-1.0) ** word_code[b]) * f))
- *         if compute_loss:             # <<<<<<<<<<<<<<
- *             sgn = (-1.0) ** word_code[b]
- *             # loss += sum(-log(expit(-sgn * f)))
- */
-    __pyx_t_4 = (__pyx_v_compute_loss != 0);
-    if (__pyx_t_4) {
-
-      /* "gensim/models/doc2vec_inner.pyx":126
- *         # printf("%f\n", np.sum(((-1.0) ** word_code[b]) * f))
- *         if compute_loss:
- *             sgn = (-1.0) ** word_code[b]             # <<<<<<<<<<<<<<
- *             # loss += sum(-log(expit(-sgn * f)))
- *             sgn  = -1.*(-sgn * f)
- */
-      __pyx_v_sgn = pow(-1.0, ((double)(__pyx_v_word_code[__pyx_v_b])));
-
-      /* "gensim/models/doc2vec_inner.pyx":128
- *             sgn = (-1.0) ** word_code[b]
- *             # loss += sum(-log(expit(-sgn * f)))
- *             sgn  = -1.*(-sgn * f)             # <<<<<<<<<<<<<<
- *             loss += log(1.+exp(sgn))
- *         printf("%f\n", loss)
- */
-      __pyx_v_sgn = (-1. * ((-__pyx_v_sgn) * __pyx_v_f));
-
-      /* "gensim/models/doc2vec_inner.pyx":129
- *             # loss += sum(-log(expit(-sgn * f)))
- *             sgn  = -1.*(-sgn * f)
- *             loss += log(1.+exp(sgn))             # <<<<<<<<<<<<<<
- *         printf("%f\n", loss)
- *         # exit(loss)
- */
-      __pyx_v_loss = (__pyx_v_loss + log((1. + exp(__pyx_v_sgn))));
-
-      /* "gensim/models/doc2vec_inner.pyx":125
- * 
- *         # printf("%f\n", np.sum(((-1.0) ** word_code[b]) * f))
- *         if compute_loss:             # <<<<<<<<<<<<<<
- *             sgn = (-1.0) ** word_code[b]
- *             # loss += sum(-log(expit(-sgn * f)))
- */
-    }
-
     /* "gensim/models/doc2vec_inner.pyx":130
- *             sgn  = -1.*(-sgn * f)
- *             loss += log(1.+exp(sgn))
- *         printf("%f\n", loss)             # <<<<<<<<<<<<<<
+ *         #     sgn  = -1.*(-sgn * f)
+ *         #     loss += log(1.+exp(sgn))
+ *         printf("hi")             # <<<<<<<<<<<<<<
  *         # exit(loss)
  *         f = EXP_TABLE[<int>((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]
  */
-    (void)(printf(((char const *)"%f\n"), __pyx_v_loss));
+    (void)(printf(((char const *)"hi")));
 
     /* "gensim/models/doc2vec_inner.pyx":132
- *         printf("%f\n", loss)
+ *         printf("hi")
  *         # exit(loss)
  *         f = EXP_TABLE[<int>((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]             # <<<<<<<<<<<<<<
  *         g = (1 - word_code[b] - f) * alpha

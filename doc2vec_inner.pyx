@@ -122,12 +122,12 @@ cdef void fast_document_dm_hs(
             continue
 
         # printf("%f\n", np.sum(((-1.0) ** word_code[b]) * f)) 
-        if compute_loss:
-            sgn = (-1.0) ** word_code[b]
-            # loss += sum(-log(expit(-sgn * f)))
-            sgn  = -1.*(-sgn * f)
-            loss += log(1.+exp(sgn))
-        printf("%f\n", loss)
+        # if compute_loss:
+        #     sgn = (-1.0) ** word_code[b]
+        #     # loss += sum(-log(expit(-sgn * f)))
+        #     sgn  = -1.*(-sgn * f)
+        #     loss += log(1.+exp(sgn))
+        printf("hi")
         # exit(loss)
         f = EXP_TABLE[<int>((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]
         g = (1 - word_code[b] - f) * alpha
