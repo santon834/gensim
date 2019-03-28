@@ -2093,14 +2093,14 @@ static void __pyx_f_6gensim_6models_13doc2vec_inner_fast_document_dbow_hs(__pyx_
   /* "gensim/models/doc2vec_inner.pyx":45
  *     const np.uint32_t context_index, const REAL_t alpha, REAL_t *work, int learn_context, int learn_hidden,
  *     REAL_t *context_locks) nogil:
- *     printf("hi")             # <<<<<<<<<<<<<<
+ *     printf("hi1")             # <<<<<<<<<<<<<<
  *     cdef long long a, b
  *     cdef long long row1 = context_index * size, row2
  */
-  (void)(printf(((char const *)"hi")));
+  (void)(printf(((char const *)"hi1")));
 
   /* "gensim/models/doc2vec_inner.pyx":47
- *     printf("hi")
+ *     printf("hi1")
  *     cdef long long a, b
  *     cdef long long row1 = context_index * size, row2             # <<<<<<<<<<<<<<
  *     cdef REAL_t f, g
@@ -2325,7 +2325,7 @@ static unsigned PY_LONG_LONG __pyx_f_6gensim_6models_13doc2vec_inner_fast_docume
  *     cdef int d
  * 
  *     memset(work, 0, size * cython.sizeof(REAL_t))             # <<<<<<<<<<<<<<
- *     printf("hi")
+ *     printf("hi2")
  *     for d in range(negative+1):
  */
   (void)(memset(__pyx_v_work, 0, (__pyx_v_size * (sizeof(__pyx_t_6gensim_6models_14word2vec_inner_REAL_t)))));
@@ -2333,15 +2333,15 @@ static unsigned PY_LONG_LONG __pyx_f_6gensim_6models_13doc2vec_inner_fast_docume
   /* "gensim/models/doc2vec_inner.pyx":80
  * 
  *     memset(work, 0, size * cython.sizeof(REAL_t))
- *     printf("hi")             # <<<<<<<<<<<<<<
+ *     printf("hi2")             # <<<<<<<<<<<<<<
  *     for d in range(negative+1):
  *         if d == 0:
  */
-  (void)(printf(((char const *)"hi")));
+  (void)(printf(((char const *)"hi2")));
 
   /* "gensim/models/doc2vec_inner.pyx":81
  *     memset(work, 0, size * cython.sizeof(REAL_t))
- *     printf("hi")
+ *     printf("hi2")
  *     for d in range(negative+1):             # <<<<<<<<<<<<<<
  *         if d == 0:
  *             target_index = word_index
@@ -2352,7 +2352,7 @@ static unsigned PY_LONG_LONG __pyx_f_6gensim_6models_13doc2vec_inner_fast_docume
     __pyx_v_d = __pyx_t_3;
 
     /* "gensim/models/doc2vec_inner.pyx":82
- *     printf("hi")
+ *     printf("hi2")
  *     for d in range(negative+1):
  *         if d == 0:             # <<<<<<<<<<<<<<
  *             target_index = word_index
@@ -2380,7 +2380,7 @@ static unsigned PY_LONG_LONG __pyx_f_6gensim_6models_13doc2vec_inner_fast_docume
       __pyx_v_label = __pyx_v_6gensim_6models_13doc2vec_inner_ONEF;
 
       /* "gensim/models/doc2vec_inner.pyx":82
- *     printf("hi")
+ *     printf("hi2")
  *     for d in range(negative+1):
  *         if d == 0:             # <<<<<<<<<<<<<<
  *             target_index = word_index
@@ -2632,11 +2632,11 @@ static void __pyx_f_6gensim_6models_13doc2vec_inner_fast_document_dm_hs(__pyx_t_
   /* "gensim/models/doc2vec_inner.pyx":110
  *     REAL_t *neu1, REAL_t *syn1, const REAL_t alpha, REAL_t *work,
  *     const int size, int learn_hidden, int compute_loss) nogil:
- *     printf("hi")             # <<<<<<<<<<<<<<
+ *     printf("hi3")             # <<<<<<<<<<<<<<
  *     cdef long long b
  *     cdef long long row2
  */
-  (void)(printf(((char const *)"hi")));
+  (void)(printf(((char const *)"hi3")));
 
   /* "gensim/models/doc2vec_inner.pyx":115
  *     cdef REAL_t f, g, loss, sgn
@@ -2816,14 +2816,14 @@ static unsigned PY_LONG_LONG __pyx_f_6gensim_6models_13doc2vec_inner_fast_docume
   /* "gensim/models/doc2vec_inner.pyx":149
  *     REAL_t *neu1, REAL_t *syn1neg, const int predict_word_index, const REAL_t alpha, REAL_t *work,
  *     const int size, int learn_hidden) nogil:
- *     printf("hi")             # <<<<<<<<<<<<<<
+ *     printf("hi4")             # <<<<<<<<<<<<<<
  *     cdef long long row2
  *     cdef unsigned long long modulo = 281474976710655ULL
  */
-  (void)(printf(((char const *)"hi")));
+  (void)(printf(((char const *)"hi4")));
 
   /* "gensim/models/doc2vec_inner.pyx":151
- *     printf("hi")
+ *     printf("hi4")
  *     cdef long long row2
  *     cdef unsigned long long modulo = 281474976710655ULL             # <<<<<<<<<<<<<<
  *     cdef REAL_t f, g, label
@@ -3095,11 +3095,11 @@ static void __pyx_f_6gensim_6models_13doc2vec_inner_fast_document_dmc_hs(__pyx_t
   /* "gensim/models/doc2vec_inner.pyx":185
  *     REAL_t *neu1, REAL_t *syn1, const REAL_t alpha, REAL_t *work,
  *     const int layer1_size, const int vector_size, int learn_hidden) nogil:
- *     printf("hi")             # <<<<<<<<<<<<<<
+ *     printf("hi5")             # <<<<<<<<<<<<<<
  *     cdef long long a, b
  *     cdef long long row2
  */
-  (void)(printf(((char const *)"hi")));
+  (void)(printf(((char const *)"hi5")));
 
   /* "gensim/models/doc2vec_inner.pyx":193
  *     # l1 already composed by caller, passed in as neu1
@@ -3261,11 +3261,11 @@ static unsigned PY_LONG_LONG __pyx_f_6gensim_6models_13doc2vec_inner_fast_docume
   /* "gensim/models/doc2vec_inner.pyx":209
  *     REAL_t *neu1, REAL_t *syn1neg, const int predict_word_index, const REAL_t alpha, REAL_t *work,
  *     const int layer1_size, const int vector_size, int learn_hidden) nogil:
- *     printf("hi")             # <<<<<<<<<<<<<<
+ *     printf("hi6")             # <<<<<<<<<<<<<<
  *     cdef long long a
  *     cdef long long row2
  */
-  (void)(printf(((char const *)"hi")));
+  (void)(printf(((char const *)"hi6")));
 
   /* "gensim/models/doc2vec_inner.pyx":212
  *     cdef long long a

@@ -42,7 +42,7 @@ cdef void fast_document_dbow_hs(
     REAL_t *context_vectors, REAL_t *syn1, const int size,
     const np.uint32_t context_index, const REAL_t alpha, REAL_t *work, int learn_context, int learn_hidden,
     REAL_t *context_locks) nogil:
-    printf("hi")
+    printf("hi1")
     cdef long long a, b
     cdef long long row1 = context_index * size, row2
     cdef REAL_t f, g
@@ -77,7 +77,7 @@ cdef unsigned long long fast_document_dbow_neg(
     cdef int d
 
     memset(work, 0, size * cython.sizeof(REAL_t))
-    printf("hi")
+    printf("hi2")
     for d in range(negative+1):
         if d == 0:
             target_index = word_index
@@ -107,7 +107,7 @@ cdef void fast_document_dm_hs(
     const np.uint32_t *word_point, const np.uint8_t *word_code, int word_code_len,
     REAL_t *neu1, REAL_t *syn1, const REAL_t alpha, REAL_t *work,
     const int size, int learn_hidden, int compute_loss) nogil:
-    printf("hi")
+    printf("hi3")
     cdef long long b
     cdef long long row2
     cdef REAL_t f, g, loss, sgn
@@ -146,7 +146,7 @@ cdef unsigned long long fast_document_dm_neg(
     const int negative, np.uint32_t *cum_table, unsigned long long cum_table_len, unsigned long long next_random,
     REAL_t *neu1, REAL_t *syn1neg, const int predict_word_index, const REAL_t alpha, REAL_t *work,
     const int size, int learn_hidden) nogil:
-    printf("hi")
+    printf("hi4")
     cdef long long row2
     cdef unsigned long long modulo = 281474976710655ULL
     cdef REAL_t f, g, label
@@ -182,7 +182,7 @@ cdef void fast_document_dmc_hs(
     const np.uint32_t *word_point, const np.uint8_t *word_code, int word_code_len,
     REAL_t *neu1, REAL_t *syn1, const REAL_t alpha, REAL_t *work,
     const int layer1_size, const int vector_size, int learn_hidden) nogil:
-    printf("hi")
+    printf("hi5")
     cdef long long a, b
     cdef long long row2
     cdef REAL_t f, g
@@ -206,7 +206,7 @@ cdef unsigned long long fast_document_dmc_neg(
     const int negative, np.uint32_t *cum_table, unsigned long long cum_table_len, unsigned long long next_random,
     REAL_t *neu1, REAL_t *syn1neg, const int predict_word_index, const REAL_t alpha, REAL_t *work,
     const int layer1_size, const int vector_size, int learn_hidden) nogil:
-    printf("hi")
+    printf("hi6")
     cdef long long a
     cdef long long row2
     cdef unsigned long long modulo = 281474976710655ULL
