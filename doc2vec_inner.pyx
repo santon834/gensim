@@ -168,6 +168,7 @@ cdef unsigned long long fast_document_dm_neg(
             continue
         f = EXP_TABLE[<int>((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]
         g = (label - f) * alpha
+        printf("%f\n", g)
         our_saxpy(&size, &g, &syn1neg[row2], &ONE, work, &ONE)
         if learn_hidden:
             our_saxpy(&size, &g, neu1, &ONE, &syn1neg[row2], &ONE)
