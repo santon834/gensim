@@ -13,7 +13,10 @@
 import cython
 import numpy as np
 from numpy import zeros, float32 as REAL
+from libc.stdio cimport printf
+
 cimport numpy as np
+from libc.math cimport log, exp
 
 from libc.string cimport memset, memcpy
 
@@ -102,12 +105,13 @@ cdef unsigned long long fast_document_dbow_neg(
 cdef void fast_document_dm_hs(
     const np.uint32_t *word_point, const np.uint8_t *word_code, int word_code_len,
     REAL_t *neu1, REAL_t *syn1, const REAL_t alpha, REAL_t *work,
-    const int size, int learn_hidden) nogil:
+    const int size, int learn_hidden, int compute_loss) nogil:
 
     cdef long long b
     cdef long long row2
-    cdef REAL_t f, g
+    cdef REAL_t f, g, loss, sgn
 
+    loss = 0.
     # l1 already composed by caller, passed in as neu1
     # work (also passed in)  will accumulate l1 error
     for b in range(word_code_len):
@@ -115,11 +119,25 @@ cdef void fast_document_dm_hs(
         f = our_dot(&size, neu1, &ONE, &syn1[row2], &ONE)
         if f <= -MAX_EXP or f >= MAX_EXP:
             continue
+
+        # printf("%f\n", np.sum(((-1.0) ** word_code[b]) * f)) 
+        if compute_loss:
+            sgn = (-1.0) ** word_code[b]
+            # loss += sum(-log(expit(-sgn * f)))
+            sgn  = -1.*(-sgn * f)
+            loss += log(1.+exp(sgn))
+        printf("%f\n", loss)
         f = EXP_TABLE[<int>((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]
         g = (1 - word_code[b] - f) * alpha
         our_saxpy(&size, &g, &syn1[row2], &ONE, work, &ONE)
         if learn_hidden:
             our_saxpy(&size, &g, neu1, &ONE, &syn1[row2], &ONE)
+
+        # if compute_loss:
+        #     sgn = (-1.0) ** word_code[b]
+        #     # loss += sum(-log(expit(-sgn * f)))
+        #     loss += (-sgn * f)
+    # print loss
 
 
 cdef unsigned long long fast_document_dm_neg(
@@ -332,7 +350,7 @@ def train_document_dbow(model, doc_words, doctag_indexes, alpha, work=None,
 
     init_d2v_config(&c, model, alpha, learn_doctags, learn_words, learn_hidden, train_words=train_words, work=work,
                     neu1=None, word_vectors=word_vectors, word_locks=word_locks,
-                    doctag_vectors=doctag_vectors, doctag_locks=doctag_locks, compute_loss=compute_loss)
+                    doctag_vectors=doctag_vectors, doctag_locks=doctag_locks, docvecs_count=0, compute_loss=compute_loss)
 
     c.doctag_len = <int>min(MAX_DOCUMENT_LEN, len(doctag_indexes))
 
@@ -458,7 +476,7 @@ def train_document_dm(model, doc_words, doctag_indexes, alpha, work=None, neu1=N
 
     init_d2v_config(&c, model, alpha, learn_doctags, learn_words, learn_hidden, train_words=False,
                     work=work, neu1=neu1, word_vectors=word_vectors, word_locks=word_locks,
-                    doctag_vectors=doctag_vectors, doctag_locks=doctag_locks, compute_loss=compute_loss)
+                    doctag_vectors=doctag_vectors, doctag_locks=doctag_locks, docvecs_count=0, compute_loss=compute_loss)
 
     c.doctag_len = <int>min(MAX_DOCUMENT_LEN, len(doctag_indexes))
 
@@ -518,7 +536,7 @@ def train_document_dm(model, doc_words, doctag_indexes, alpha, work=None, neu1=N
             memset(c.work, 0, c.layer1_size * cython.sizeof(REAL_t))  # work to accumulate l1 error
             if c.hs:
                 fast_document_dm_hs(c.points[i], c.codes[i], c.codelens[i], c.neu1, c.syn1, c.alpha, c.work,
-                                    c.layer1_size, c.learn_hidden)
+                                    c.layer1_size, c.learn_hidden, c.compute_loss)
             if c.negative:
                 c.next_random = fast_document_dm_neg(c.negative, c.cum_table, c.cum_table_len, c.next_random,
                                                      c.neu1, c.syn1neg, c.indexes[i], c.alpha, c.work, c.layer1_size,
@@ -596,7 +614,7 @@ def train_document_dm_concat(model, doc_words, doctag_indexes, alpha, work=None,
     cdef long result = 0
 
     init_d2v_config(&c, model, alpha, learn_doctags, learn_words, learn_hidden, train_words=False, work=work, neu1=neu1,
-                    word_vectors=word_vectors, word_locks=word_locks, doctag_vectors=doctag_vectors, doctag_locks=doctag_locks, compute_loss=compute_loss)
+                    word_vectors=word_vectors, word_locks=word_locks, doctag_vectors=doctag_vectors, doctag_locks=doctag_locks, docvecs_count=0, compute_loss=compute_loss)
 
     c.doctag_len = <int>min(MAX_DOCUMENT_LEN, len(doctag_indexes))
 

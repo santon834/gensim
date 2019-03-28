@@ -22,7 +22,7 @@ DEF MAX_DOCUMENT_LEN = 10000
 
 cdef struct Doc2VecConfig:
     int hs, negative, sample, learn_doctags, learn_words, learn_hidden, train_words, cbow_mean
-    int document_len, doctag_len, window, expected_doctag_len, null_word_index, workers, docvecs_count
+    int document_len, doctag_len, window, expected_doctag_len, null_word_index, workers, docvecs_count, compute_loss
 
     REAL_t *word_vectors
     REAL_t *doctag_vectors
@@ -67,7 +67,7 @@ cdef unsigned long long fast_document_dbow_neg(
 cdef void fast_document_dm_hs(
     const np.uint32_t *word_point, const np.uint8_t *word_code, int word_code_len,
     REAL_t *neu1, REAL_t *syn1, const REAL_t alpha, REAL_t *work,
-    const int size, int learn_hidden) nogil
+    const int size, int learn_hidden, int compute_loss) nogil
 
 
 cdef unsigned long long fast_document_dm_neg(
