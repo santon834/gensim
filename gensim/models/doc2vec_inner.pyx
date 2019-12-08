@@ -24,7 +24,7 @@ except ImportError:
     # in scipy > 0.15, fblas function has been removed
     import scipy.linalg.blas as fblas
 
-from word2vec_inner cimport bisect_left, random_int32, sscal, REAL_t, EXP_TABLE, our_dot, our_saxpy
+from word2vec_inner cimport bisect_left, random_int32, sscal, REAL_t, EXP_TABLE, LOG_TABLE, our_dot, our_saxpy
 
 DEF MAX_DOCUMENT_LEN = 10000
 
@@ -63,12 +63,13 @@ cdef unsigned long long fast_document_dbow_neg(
     const int negative, np.uint32_t *cum_table, unsigned long long cum_table_len,
     REAL_t *context_vectors, REAL_t *syn1neg, const int size, const np.uint32_t word_index,
     const np.uint32_t context_index, const REAL_t alpha, REAL_t *work,
-    unsigned long long next_random, int learn_context, int learn_hidden, REAL_t *context_locks) nogil:
+    unsigned long long next_random, int learn_context, int learn_hidden, REAL_t *context_locks,
+    const int _compute_loss, REAL_t *_running_training_loss_param) nogil:
 
     cdef long long a
     cdef long long row1 = context_index * size, row2
     cdef unsigned long long modulo = 281474976710655ULL
-    cdef REAL_t f, g, label
+    cdef REAL_t f, g, label, f_dot, log_e_f_dot
     cdef np.uint32_t target_index
     cdef int d
 
@@ -85,11 +86,16 @@ cdef unsigned long long fast_document_dbow_neg(
                 continue
             label = <REAL_t>0.0
         row2 = target_index * size
-        f = our_dot(&size, &context_vectors[row1], &ONE, &syn1neg[row2], &ONE)
-        if f <= -MAX_EXP or f >= MAX_EXP:
+        f_dot = our_dot(&size, &context_vectors[row1], &ONE, &syn1neg[row2], &ONE)
+        if f_dot <= -MAX_EXP or f_dot >= MAX_EXP:
             continue
-        f = EXP_TABLE[<int>((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]
+        f = EXP_TABLE[<int>((f_dot + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]
         g = (label - f) * alpha
+        if _compute_loss == 1:
+            f_dot = (f_dot if d == 0  else -f_dot)
+            log_e_f_dot = LOG_TABLE[<int>((f_dot + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]
+            _running_training_loss_param[0] = _running_training_loss_param[0] - log_e_f_dot
+
         our_saxpy(&size, &g, &syn1neg[row2], &ONE, work, &ONE)
         if learn_hidden:
             our_saxpy(&size, &g, &context_vectors[row1], &ONE, &syn1neg[row2], &ONE)
@@ -221,8 +227,8 @@ cdef unsigned long long fast_document_dmc_neg(
 
 
 cdef init_d2v_config(Doc2VecConfig *c, model, alpha, learn_doctags, learn_words, learn_hidden,
-                     train_words=False, work=None, neu1=None, word_vectors=None, word_locks=None, doctag_vectors=None,
-                     doctag_locks=None, docvecs_count=0):
+                     train_words=False, work=None, neu1=None, compute_loss=None, word_vectors=None, word_locks=None,
+                     doctag_vectors=None, doctag_locks=None, docvecs_count=0):
     c[0].hs = model.hs
     c[0].negative = model.negative
     c[0].sample = (model.vocabulary.sample != 0)
@@ -239,6 +245,9 @@ cdef init_d2v_config(Doc2VecConfig *c, model, alpha, learn_doctags, learn_words,
 
     c[0].window = model.window
     c[0].expected_doctag_len = model.dm_tag_count
+
+    c[0].compute_loss = (1 if compute_loss else 0)
+    c[0].running_training_loss = model.running_training_loss
 
     if '\0' in model.wv.vocab:
         c[0].null_word_index = model.wv.vocab['\0'].index
@@ -277,7 +286,7 @@ cdef init_d2v_config(Doc2VecConfig *c, model, alpha, learn_doctags, learn_words,
 
 
 
-def train_document_dbow(model, doc_words, doctag_indexes, alpha, work=None,
+def train_document_dbow(model, doc_words, doctag_indexes, alpha, work=None, compute_loss=None,
                         train_words=False, learn_doctags=True, learn_words=True, learn_hidden=True,
                         word_vectors=None, word_locks=None, doctag_vectors=None, doctag_locks=None):
     """Update distributed bag of words model ("PV-DBOW") by training on a single document.
@@ -298,6 +307,8 @@ def train_document_dbow(model, doc_words, doctag_indexes, alpha, work=None,
         Learning rate.
     work : list of float, optional
         Updates to be performed on each neuron in the hidden layer of the underlying network.
+    compute_loss : bool, optional
+        Whether or not the training loss should be computed.
     train_words : bool, optional
         Word vectors will be updated exactly as per Word2Vec skip-gram training only if **both** `learn_words`
         and `train_words` are set to True.
@@ -330,7 +341,7 @@ def train_document_dbow(model, doc_words, doctag_indexes, alpha, work=None,
     cdef long result = 0
 
     init_d2v_config(&c, model, alpha, learn_doctags, learn_words, learn_hidden, train_words=train_words, work=work,
-                    neu1=None, word_vectors=word_vectors, word_locks=word_locks,
+                    neu1=None, compute_loss=compute_loss, word_vectors=word_vectors, word_locks=word_locks,
                     doctag_vectors=doctag_vectors, doctag_locks=doctag_locks)
 
     c.doctag_len = <int>min(MAX_DOCUMENT_LEN, len(doctag_indexes))
@@ -385,7 +396,7 @@ def train_document_dbow(model, doc_words, doctag_indexes, alpha, work=None,
                         c.next_random = fast_document_dbow_neg(c.negative, c.cum_table, c.cum_table_len, c.word_vectors,
                                                                c.syn1neg, c.layer1_size, c.indexes[i], c.indexes[j],
                                                                c.alpha, c.work, c.next_random, c.learn_words,
-                                                               c.learn_hidden, c.word_locks)
+                                                               c.learn_hidden, c.word_locks, c.compute_loss, &c.running_training_loss)
 
             # docvec-training
             for j in range(c.doctag_len):
@@ -396,8 +407,10 @@ def train_document_dbow(model, doc_words, doctag_indexes, alpha, work=None,
                     c.next_random = fast_document_dbow_neg(c.negative, c.cum_table, c.cum_table_len, c.doctag_vectors,
                                                            c.syn1neg, c.layer1_size, c.indexes[i], c.doctag_indexes[j],
                                                            c.alpha, c.work, c.next_random, c.learn_doctags,
-                                                           c.learn_hidden, c.doctag_locks)
+                                                           c.learn_hidden, c.doctag_locks, c.compute_loss, &c.running_training_loss)
 
+    if c.negative:
+        model.running_training_loss = c.running_training_loss
     return result
 
 

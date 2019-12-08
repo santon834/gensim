@@ -98,7 +98,7 @@ except ImportError:
     # failed... fall back to plain numpy (20-80x slower training than the above)
     FAST_VERSION = -1
 
-    def train_document_dbow(model, doc_words, doctag_indexes, alpha, work=None,
+    def train_document_dbow(model, doc_words, doctag_indexes, alpha, work=None, compute_loss=None,
                             train_words=False, learn_doctags=True, learn_words=True, learn_hidden=True,
                             word_vectors=None, word_locks=None, doctag_vectors=None, doctag_locks=None):
         """Update distributed bag of words model ("PV-DBOW") by training on a single document.
@@ -721,10 +721,11 @@ class Doc2Vec(BaseWordEmbeddingsModel):
             doctag_indexes = self.vocabulary.indexed_doctags(doc.tags, self.docvecs)
             doctag_vectors = self.docvecs.vectors_docs
             doctag_locks = self.trainables.vectors_docs_lockf
+            compute_loss = self.compute_loss
             if self.sg:
                 tally += train_document_dbow(
-                    self, doc.words, doctag_indexes, alpha, work, train_words=self.dbow_words,
-                    doctag_vectors=doctag_vectors, doctag_locks=doctag_locks
+                    self, doc.words, doctag_indexes, alpha, work, compute_loss=compute_loss,
+                    train_words=self.dbow_words, doctag_vectors=doctag_vectors, doctag_locks=doctag_locks
                 )
             elif self.dm_concat:
                 tally += train_document_dm_concat(
@@ -876,7 +877,7 @@ class Doc2Vec(BaseWordEmbeddingsModel):
         """
         return 60 * len(self.docvecs.offset2doctag) + 140 * len(self.docvecs.doctags)
 
-    def infer_vector(self, doc_words, alpha=None, min_alpha=None, epochs=None, steps=None):
+    def infer_vector(self, doc_words, alpha=None, compute_loss=None, min_alpha=None, epochs=None, steps=None):
         """Infer a vector for given post-bulk training document.
 
         Notes
@@ -890,6 +891,8 @@ class Doc2Vec(BaseWordEmbeddingsModel):
             A document for which the vector representation will be inferred.
         alpha : float, optional
             The initial learning rate. If unspecified, value from model initialization will be reused.
+        compute_loss : bool, optional
+            Whether or not the training loss should be computed.
         min_alpha : float, optional
             Learning rate will linearly drop to `min_alpha` over all inference epochs. If unspecified,
             value from model initialization will be reused.
@@ -925,7 +928,7 @@ class Doc2Vec(BaseWordEmbeddingsModel):
         for i in range(epochs):
             if self.sg:
                 train_document_dbow(
-                    self, doc_words, doctag_indexes, alpha, work,
+                    self, doc_words, doctag_indexes, alpha, work, compute_loss=compute_loss,
                     learn_words=False, learn_hidden=False, doctag_vectors=doctag_vectors, doctag_locks=doctag_locks
                 )
             elif self.dm_concat:

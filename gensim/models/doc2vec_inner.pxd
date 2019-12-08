@@ -22,7 +22,7 @@ DEF MAX_DOCUMENT_LEN = 10000
 
 cdef struct Doc2VecConfig:
     int hs, negative, sample, learn_doctags, learn_words, learn_hidden, train_words, cbow_mean
-    int document_len, doctag_len, window, expected_doctag_len, null_word_index, workers, docvecs_count
+    int document_len, doctag_len, window, expected_doctag_len, null_word_index, workers, docvecs_count, compute_loss
 
     REAL_t *word_vectors
     REAL_t *doctag_vectors
@@ -31,6 +31,7 @@ cdef struct Doc2VecConfig:
     REAL_t *work
     REAL_t *neu1
     REAL_t alpha
+    REAL_t running_training_loss
     int layer1_size, vector_size
 
     int codelens[MAX_DOCUMENT_LEN]
@@ -61,7 +62,8 @@ cdef unsigned long long fast_document_dbow_neg(
     const int negative, np.uint32_t *cum_table, unsigned long long cum_table_len,
     REAL_t *context_vectors, REAL_t *syn1neg, const int size, const np.uint32_t word_index,
     const np.uint32_t context_index, const REAL_t alpha, REAL_t *work,
-    unsigned long long next_random, int learn_context, int learn_hidden, REAL_t *context_locks) nogil
+    unsigned long long next_random, int learn_context, int learn_hidden, REAL_t *context_locks,
+    const int _compute_loss, REAL_t *_running_training_loss_param) nogil
 
 
 cdef void fast_document_dm_hs(
@@ -89,4 +91,4 @@ cdef unsigned long long fast_document_dmc_neg(
 
 
 cdef init_d2v_config(Doc2VecConfig *c, model, alpha, learn_doctags, learn_words, learn_hidden, train_words=*, work=*,
-                     neu1=*, word_vectors=*, word_locks=*, doctag_vectors=*, doctag_locks=*, docvecs_count=*)
+                     neu1=*, compute_loss=*, word_vectors=*, word_locks=*, doctag_vectors=*, doctag_locks=*, docvecs_count=*)
