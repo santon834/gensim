@@ -325,7 +325,7 @@ cdef init_d2v_config(Doc2VecConfig *c, model, alpha, learn_doctags, learn_words,
 
 
 def train_document_dbow(model, doc_words, doctag_indexes, alpha, work=None,
-                        train_words=False, learn_doctags=True, learn_words=True, learn_hidden=True, learn_lda=False,
+                        train_words=False, learn_doctags=True, learn_words=True, learn_hidden=True,
                         word_vectors=None, word_locks=None, doctag_vectors=None, doctag_locks=None, lda_vectors=None):
     """Update distributed bag of words model ("PV-DBOW") by training on a single document.
 
@@ -440,7 +440,7 @@ def train_document_dbow(model, doc_words, doctag_indexes, alpha, work=None,
                     fast_document_dbow_hs(c.points[i], c.codes[i], c.codelens[i], c.doctag_vectors, c.syn1, c.layer1_size,
                                           c.doctag_indexes[j], c.alpha, c.work, c.learn_doctags, c.learn_hidden, c.doctag_locks)
                 if c.negative:
-                    if learn_lda:
+                    if lda_vectors is not None:
                         c.next_random = fast_document_dbow_neg_lda(c.negative, c.cum_table, c.cum_table_len, c.doctag_vectors,
                                                                    c.syn1neg, c.layer1_size, c.indexes[i], c.doctag_indexes[j],
                                                                    c.alpha, c.work, c.next_random, c.learn_doctags,
@@ -452,7 +452,6 @@ def train_document_dbow(model, doc_words, doctag_indexes, alpha, work=None,
                                                                c.learn_hidden, c.doctag_locks)
 
     return result
-
 
 
 def train_document_dm(model, doc_words, doctag_indexes, alpha, work=None, neu1=None,
@@ -631,7 +630,7 @@ def train_document_dm_concat(model, doc_words, doctag_indexes, alpha, work=None,
         The vector representation for each word in the vocabulary. If None, these will be retrieved from the model.
     word_locks : numpy.ndarray, optional
         A learning lock factor for each weight in the hidden layer for words, value 0 completely blocks updates,
-        a value of 1 allows to update word-vectors.train_document_dm_concat
+        a value of 1 allows to update word-vectors.
     doctag_vectors : numpy.ndarray, optional
         Vector representations of the tags. If None, these will be retrieved from the model.
     doctag_locks : numpy.ndarray, optional

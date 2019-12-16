@@ -721,7 +721,7 @@ class BaseWordEmbeddingsModel(BaseAny2VecModel):
         self.sg = int(sg)
         self.sg_lda = int(sg_lda)
         if vector_size % 4 != 0:
-                logger.warning("consider setting layer size to a multiple of 4 for greater performance")
+            logger.warning("consider setting layer size to a multiple of 4 for greater performance")
         self.alpha = float(alpha)
         self.window = int(window)
         self.random = random.RandomState(seed)

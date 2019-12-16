@@ -91,7 +91,7 @@ from gensim.utils import deprecated, smart_open
 logger = logging.getLogger(__name__)
 
 try:
-    from gensim.models.doc2vec_inner import train_document_dbow, train_document_dbow_lda, train_document_dm, train_document_dm_concat
+    from gensim.models.doc2vec_inner import train_document_dbow, train_document_dm, train_document_dm_concat
     from gensim.models.word2vec_inner import FAST_VERSION  # blas-adaptation shared from word2vec
 
 except ImportError:
@@ -732,7 +732,7 @@ class Doc2Vec(BaseWordEmbeddingsModel):
                     doctag_vectors=doctag_vectors, doctag_locks=doctag_locks
                 )
             elif self.sg_lda:  #TODO
-                tally += train_document_dbow_lda(  #TODO
+                tally += train_document_dbow(  #TODO
                     self, doc.words, doctag_indexes, alpha, work, train_words=self.dbow_words,
                     doctag_vectors=doctag_vectors, doctag_locks=doctag_locks, lda_vectors=lda_vectors
                 )
