@@ -267,7 +267,7 @@ cdef unsigned long long fast_document_dmc_neg(
     return next_random
 
 
-cdef init_d2v_config(Doc2VecConfig *c, model, alpha, learn_doctags, learn_words, learn_hidden, learn_lda,
+cdef init_d2v_config(Doc2VecConfig *c, model, alpha, learn_doctags, learn_words, learn_hidden,
                      train_words=False, work=None, neu1=None, word_vectors=None, word_locks=None, doctag_vectors=None,
                      doctag_locks=None, docvecs_count=0):
     c[0].hs = model.hs
@@ -278,7 +278,6 @@ cdef init_d2v_config(Doc2VecConfig *c, model, alpha, learn_doctags, learn_words,
     c[0].learn_doctags = learn_doctags
     c[0].learn_words = learn_words
     c[0].learn_hidden = learn_hidden
-    c[0].learn_lda = learn_lda
     c[0].alpha = alpha
     c[0].layer1_size = model.trainables.layer1_size
     c[0].vector_size = model.docvecs.vector_size
@@ -327,7 +326,7 @@ cdef init_d2v_config(Doc2VecConfig *c, model, alpha, learn_doctags, learn_words,
 
 def train_document_dbow(model, doc_words, doctag_indexes, alpha, work=None,
                         train_words=False, learn_doctags=True, learn_words=True, learn_hidden=True, learn_lda=False,
-                        word_vectors=None, word_locks=None, doctag_vectors=None, doctag_locks=None):
+                        word_vectors=None, word_locks=None, doctag_vectors=None, doctag_locks=None, lda_vectors=None):
     """Update distributed bag of words model ("PV-DBOW") by training on a single document.
 
     Called internally from :meth:`~gensim.models.doc2vec.Doc2Vec.train` and
@@ -377,7 +376,7 @@ def train_document_dbow(model, doc_words, doctag_indexes, alpha, work=None,
     cdef int i, j
     cdef long result = 0
 
-    init_d2v_config(&c, model, alpha, learn_doctags, learn_words, learn_hidden, learn_lda, train_words=train_words, work=work,
+    init_d2v_config(&c, model, alpha, learn_doctags, learn_words, learn_hidden, train_words=train_words, work=work,
                     neu1=None, word_vectors=word_vectors, word_locks=word_locks,
                     doctag_vectors=doctag_vectors, doctag_locks=doctag_locks)
 
@@ -441,11 +440,11 @@ def train_document_dbow(model, doc_words, doctag_indexes, alpha, work=None,
                     fast_document_dbow_hs(c.points[i], c.codes[i], c.codelens[i], c.doctag_vectors, c.syn1, c.layer1_size,
                                           c.doctag_indexes[j], c.alpha, c.work, c.learn_doctags, c.learn_hidden, c.doctag_locks)
                 if c.negative:
-                    if c.learn_lda:
+                    if learn_lda:
                         c.next_random = fast_document_dbow_neg_lda(c.negative, c.cum_table, c.cum_table_len, c.doctag_vectors,
                                                                    c.syn1neg, c.layer1_size, c.indexes[i], c.doctag_indexes[j],
                                                                    c.alpha, c.work, c.next_random, c.learn_doctags,
-                                                                   c.learn_hidden, c.doctag_locks, c.lda_vectors)
+                                                                   c.learn_hidden, c.doctag_locks, lda_vectors)
                     else:
                         c.next_random = fast_document_dbow_neg(c.negative, c.cum_table, c.cum_table_len, c.doctag_vectors,
                                                                c.syn1neg, c.layer1_size, c.indexes[i], c.doctag_indexes[j],
@@ -510,7 +509,7 @@ def train_document_dm(model, doc_words, doctag_indexes, alpha, work=None, neu1=N
     cdef int i, j, k, m
     cdef long result = 0
 
-    init_d2v_config(&c, model, alpha, learn_doctags, learn_words, learn_hidden, learn_lda=False, train_words=False,
+    init_d2v_config(&c, model, alpha, learn_doctags, learn_words, learn_hidden, train_words=False,
                     work=work, neu1=neu1, word_vectors=word_vectors, word_locks=word_locks,
                     doctag_vectors=doctag_vectors, doctag_locks=doctag_locks)
 
@@ -649,7 +648,7 @@ def train_document_dm_concat(model, doc_words, doctag_indexes, alpha, work=None,
     cdef int i, j, k, m, n
     cdef long result = 0
 
-    init_d2v_config(&c, model, alpha, learn_doctags, learn_words, learn_hidden, learn_lda=False, train_words=False, work=work, neu1=neu1,
+    init_d2v_config(&c, model, alpha, learn_doctags, learn_words, learn_hidden, train_words=False, work=work, neu1=neu1,
                     word_vectors=word_vectors, word_locks=word_locks, doctag_vectors=doctag_vectors, doctag_locks=doctag_locks)
 
     c.doctag_len = <int>min(MAX_DOCUMENT_LEN, len(doctag_indexes))
