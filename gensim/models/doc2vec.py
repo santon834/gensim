@@ -91,7 +91,7 @@ from gensim.utils import deprecated, smart_open
 logger = logging.getLogger(__name__)
 
 try:
-    from gensim.models.doc2vec_inner import train_document_dbow, train_document_dm, train_document_dm_concat
+    from gensim.models.doc2vec_inner import train_document_dbow, train_document_dbow_lda, train_document_dm, train_document_dm_concat
     from gensim.models.word2vec_inner import FAST_VERSION  # blas-adaptation shared from word2vec
 
 except ImportError:
@@ -473,7 +473,7 @@ class Doc2Vec(BaseWordEmbeddingsModel):
         includes not only the word vectors of each word in the context, but also the paragraph vector.
 
     """
-    def __init__(self, documents=None, corpus_file=None, dm_mean=None, dm=1, dbow_words=0, dm_concat=0,
+    def __init__(self, documents=None, corpus_file=None, dm_mean=None, dm=1, sg_lda=0, dbow_words=0, dm_concat=0,
                  dm_tag_count=1, docvecs=None, docvecs_mapfile=None, comment=None, trim_rule=None, callbacks=(),
                  **kwargs):
         """
@@ -582,6 +582,7 @@ class Doc2Vec(BaseWordEmbeddingsModel):
 
         super(Doc2Vec, self).__init__(
             sg=(1 + dm) % 2,
+            sg_lda=sg_lda,
             null_word=dm_concat,
             callbacks=callbacks,
             fast_version=FAST_VERSION,
@@ -717,6 +718,10 @@ class Doc2Vec(BaseWordEmbeddingsModel):
         """
         work, neu1 = inits
         tally = 0
+        vector_size = self.docvecs.vector_size  #TODO
+        lda_vectors = zeros((vector_size, vector_size), dtype=REAL) #TODO
+        for i in range(len(vector_size)):  #TODO
+            lda_vectors[i] = self.seeded_vector(str(i), vector_size)  #TODO
         for doc in job:
             doctag_indexes = self.vocabulary.indexed_doctags(doc.tags, self.docvecs)
             doctag_vectors = self.docvecs.vectors_docs
@@ -725,6 +730,11 @@ class Doc2Vec(BaseWordEmbeddingsModel):
                 tally += train_document_dbow(
                     self, doc.words, doctag_indexes, alpha, work, train_words=self.dbow_words,
                     doctag_vectors=doctag_vectors, doctag_locks=doctag_locks
+                )
+            elif self.sg_lda:  #TODO
+                tally += train_document_dbow_lda(  #TODO
+                    self, doc.words, doctag_indexes, alpha, work, train_words=self.dbow_words,
+                    doctag_vectors=doctag_vectors, doctag_locks=doctag_locks, lda_vectors=lda_vectors
                 )
             elif self.dm_concat:
                 tally += train_document_dm_concat(

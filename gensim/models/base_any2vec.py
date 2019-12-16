@@ -646,7 +646,7 @@ class BaseWordEmbeddingsModel(BaseAny2VecModel):
         raise NotImplementedError()
 
     def __init__(self, sentences=None, corpus_file=None, workers=3, vector_size=100, epochs=5, callbacks=(),
-                 batch_words=10000, trim_rule=None, sg=0, alpha=0.025, window=5, seed=1, hs=0, negative=5,
+                 batch_words=10000, trim_rule=None, sg=0, sg_lda=0, alpha=0.025, window=5, seed=1, hs=0, negative=5,
                  ns_exponent=0.75, cbow_mean=1, min_alpha=0.0001, compute_loss=False, fast_version=0, **kwargs):
         """
 
@@ -719,8 +719,9 @@ class BaseWordEmbeddingsModel(BaseAny2VecModel):
 
         """
         self.sg = int(sg)
+        self.sg_lda = int(sg_lda)
         if vector_size % 4 != 0:
-            logger.warning("consider setting layer size to a multiple of 4 for greater performance")
+                logger.warning("consider setting layer size to a multiple of 4 for greater performance")
         self.alpha = float(alpha)
         self.window = int(window)
         self.random = random.RandomState(seed)

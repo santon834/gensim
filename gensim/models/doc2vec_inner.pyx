@@ -24,7 +24,7 @@ except ImportError:
     # in scipy > 0.15, fblas function has been removed
     import scipy.linalg.blas as fblas
 
-from word2vec_inner cimport bisect_left, random_int32, sscal, REAL_t, EXP_TABLE, our_dot, our_saxpy
+from word2vec_inner cimport bisect_left, random_int32, sscal, REAL_t, EXP_TABLE, our_dot, our_saxpy, our_dger, our_dgemm
 
 DEF MAX_DOCUMENT_LEN = 10000
 
@@ -98,6 +98,53 @@ cdef unsigned long long fast_document_dbow_neg(
 
     return next_random
 
+cdef unsigned long long fast_document_dbow_neg_lda(
+        const int negative, np.uint32_t *cum_table, unsigned long long cum_table_len,
+        REAL_t *context_weights, REAL_t *syn1neg, const int size, const np.uint32_t word_index,
+        const np.uint32_t context_index, const REAL_t alpha, REAL_t *work,
+        unsigned long long next_random, int learn_context, int learn_hidden, REAL_t *context_locks, REAL_t *lda_vectors, int learn_lda) nogil:
+
+    cdef long long a
+    cdef long long row1 = context_index * size, row2
+    cdef unsigned long long modulo = 281474976710655ULL
+    cdef REAL_t f, g, label
+    cdef np.uint32_t target_index
+    cdef int d
+    cdef REAL_t context_vector
+
+    memset(&context_vector, 0, size * cython.sizeof(REAL_t))
+    # context_vector = context_weights[row1] * lda_vectors
+    our_dgemm('N', 'N', &ONE, &size, &size, &ONEF, &context_weights[row1], &ONE, &lda_vectors, &size, &ONEF, &context_vector, &ONE) #TODO debug
+
+    memset(work, 0, size * cython.sizeof(REAL_t))
+
+    for d in range(negative+1):
+        if d == 0:
+            target_index = word_index
+            label = ONEF
+        else:
+            target_index = bisect_left(cum_table, (next_random >> 16) % cum_table[cum_table_len-1], 0, cum_table_len)
+            next_random = (next_random * <unsigned long long>25214903917ULL + 11) & modulo
+            if target_index == word_index:
+                continue
+            label = <REAL_t>0.0
+        row2 = target_index * size
+        f = our_dot(&size, &context_vector, &ONE, &syn1neg[row2], &ONE)
+        if f <= -MAX_EXP or f >= MAX_EXP:
+            continue
+        f = EXP_TABLE[<int>((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]
+        g = (label - f) * alpha
+        our_saxpy(&size, &g, &syn1neg[row2], &ONE, work, &ONE)
+        if learn_hidden:
+            our_saxpy(&size, &g, &context_vector, &ONE, &syn1neg[row2], &ONE)
+    if learn_context:
+        # g = work  * lda_vectors^T
+        our_dgemm('N', 'T', &ONE, &size, &size, &ONEF, work, &ONE, &lda_vectors, &size, &ONEF, &g, &ONE) #TODO debug
+        our_saxpy(&size, &context_locks[context_index], &g, &ONE, &context_weights[row1], &ONE)
+    if learn_lda: #TODO add locks for inference
+        our_dger(&size, &size, &ONE, work, &ONE, &context_weights[row1], &ONE, &lda_vectors, &size) #TODO debug
+
+    return next_random
 
 cdef void fast_document_dm_hs(
     const np.uint32_t *word_point, const np.uint8_t *word_code, int word_code_len,
@@ -220,7 +267,7 @@ cdef unsigned long long fast_document_dmc_neg(
     return next_random
 
 
-cdef init_d2v_config(Doc2VecConfig *c, model, alpha, learn_doctags, learn_words, learn_hidden,
+cdef init_d2v_config(Doc2VecConfig *c, model, alpha, learn_doctags, learn_words, learn_hidden, learn_lda,
                      train_words=False, work=None, neu1=None, word_vectors=None, word_locks=None, doctag_vectors=None,
                      doctag_locks=None, docvecs_count=0):
     c[0].hs = model.hs
@@ -231,6 +278,7 @@ cdef init_d2v_config(Doc2VecConfig *c, model, alpha, learn_doctags, learn_words,
     c[0].learn_doctags = learn_doctags
     c[0].learn_words = learn_words
     c[0].learn_hidden = learn_hidden
+    c[0].learn_lda = learn_lda
     c[0].alpha = alpha
     c[0].layer1_size = model.trainables.layer1_size
     c[0].vector_size = model.docvecs.vector_size
@@ -278,7 +326,7 @@ cdef init_d2v_config(Doc2VecConfig *c, model, alpha, learn_doctags, learn_words,
 
 
 def train_document_dbow(model, doc_words, doctag_indexes, alpha, work=None,
-                        train_words=False, learn_doctags=True, learn_words=True, learn_hidden=True,
+                        train_words=False, learn_doctags=True, learn_words=True, learn_hidden=True, learn_lda=False,
                         word_vectors=None, word_locks=None, doctag_vectors=None, doctag_locks=None):
     """Update distributed bag of words model ("PV-DBOW") by training on a single document.
 
@@ -329,7 +377,7 @@ def train_document_dbow(model, doc_words, doctag_indexes, alpha, work=None,
     cdef int i, j
     cdef long result = 0
 
-    init_d2v_config(&c, model, alpha, learn_doctags, learn_words, learn_hidden, train_words=train_words, work=work,
+    init_d2v_config(&c, model, alpha, learn_doctags, learn_words, learn_hidden, learn_lda, train_words=train_words, work=work,
                     neu1=None, word_vectors=word_vectors, word_locks=word_locks,
                     doctag_vectors=doctag_vectors, doctag_locks=doctag_locks)
 
@@ -399,7 +447,7 @@ def train_document_dbow(model, doc_words, doctag_indexes, alpha, work=None,
                                                            c.learn_hidden, c.doctag_locks)
 
     return result
-
+# TODO
 def train_document_dbow_lda(model, doc_words, doctag_indexes, alpha, work=None,
                             train_words=False, learn_doctags=True, learn_words=True, learn_hidden=True, learn_lda=False,
                             word_vectors=None, word_locks=None, doctag_vectors=None, doctag_locks=None, lda_vectors=None):
@@ -472,7 +520,7 @@ def train_document_dbow_lda(model, doc_words, doctag_indexes, alpha, work=None,
     return result
 
 def train_document_dm(model, doc_words, doctag_indexes, alpha, work=None, neu1=None,
-                      learn_doctags=True, learn_words=True, learn_hidden=True,
+                      learn_doctags=True, learn_words=True, learn_hidden=True, learn_lda=False,
                       word_vectors=None, word_locks=None, doctag_vectors=None, doctag_locks=None):
     """Update distributed memory model ("PV-DM") by training on a single document.
     This method implements the DM model with a projection (input) layer that is either the sum or mean of the context
@@ -525,7 +573,7 @@ def train_document_dm(model, doc_words, doctag_indexes, alpha, work=None, neu1=N
     cdef int i, j, k, m
     cdef long result = 0
 
-    init_d2v_config(&c, model, alpha, learn_doctags, learn_words, learn_hidden, train_words=False,
+    init_d2v_config(&c, model, alpha, learn_doctags, learn_words, learn_hidden, learn_lda, train_words=False,
                     work=work, neu1=neu1, word_vectors=word_vectors, word_locks=word_locks,
                     doctag_vectors=doctag_vectors, doctag_locks=doctag_locks)
 
@@ -612,7 +660,7 @@ def train_document_dm(model, doc_words, doctag_indexes, alpha, work=None, neu1=N
 
 
 def train_document_dm_concat(model, doc_words, doctag_indexes, alpha, work=None, neu1=None,
-                             learn_doctags=True, learn_words=True, learn_hidden=True,
+                             learn_doctags=True, learn_words=True, learn_hidden=True, learn_lda=False,
                              word_vectors=None, word_locks=None, doctag_vectors=None, doctag_locks=None):
     """Update distributed memory model ("PV-DM") by training on a single document, using a concatenation of the context
      window word vectors (rather than a sum or average).
@@ -664,7 +712,7 @@ def train_document_dm_concat(model, doc_words, doctag_indexes, alpha, work=None,
     cdef int i, j, k, m, n
     cdef long result = 0
 
-    init_d2v_config(&c, model, alpha, learn_doctags, learn_words, learn_hidden, train_words=False, work=work, neu1=neu1,
+    init_d2v_config(&c, model, alpha, learn_doctags, learn_words, learn_hidden, learn_lda, train_words=False, work=work, neu1=neu1,
                     word_vectors=word_vectors, word_locks=word_locks, doctag_vectors=doctag_vectors, doctag_locks=doctag_locks)
 
     c.doctag_len = <int>min(MAX_DOCUMENT_LEN, len(doctag_indexes))

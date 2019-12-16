@@ -21,6 +21,8 @@ ctypedef np.float32_t REAL_t
 # BLAS routine signatures
 ctypedef void (*scopy_ptr) (const int *N, const float *X, const int *incX, float *Y, const int *incY) nogil
 ctypedef void (*saxpy_ptr) (const int *N, const float *alpha, const float *X, const int *incX, float *Y, const int *incY) nogil
+ctypedef void (*dger_ptr) (const int *N, const int *N, const float *alpha, const float *X, const int *incX, float *Y, const int *incY, float *A, const int *N) nogil
+ctypedef void (*dgemm_ptr) (const char *transa, const char *transb, const int *M, const int *N, const int *K, const float *alpha, const float *A, const int *ldA, const float *B, const int *ldB, const float *beta, float *C, const int *ldC) nogil
 ctypedef float (*sdot_ptr) (const int *N, const float *X, const int *incX, const float *Y, const int *incY) nogil
 ctypedef double (*dsdot_ptr) (const int *N, const float *X, const int *incX, const float *Y, const int *incY) nogil
 ctypedef double (*snrm2_ptr) (const int *N, const float *X, const int *incX) nogil
@@ -28,6 +30,8 @@ ctypedef void (*sscal_ptr) (const int *N, const float *alpha, const float *X, co
 
 cdef scopy_ptr scopy
 cdef saxpy_ptr saxpy
+cdef dger_ptr dger
+cdef dgemm_ptr dgemm
 cdef sdot_ptr sdot
 cdef dsdot_ptr dsdot
 cdef snrm2_ptr snrm2
@@ -43,10 +47,13 @@ DEF MAX_SENTENCE_LEN = 10000
 # function implementations swapped based on BLAS detected in word2vec_inner.pyx init()
 ctypedef REAL_t (*our_dot_ptr) (const int *N, const float *X, const int *incX, const float *Y, const int *incY) nogil
 ctypedef void (*our_saxpy_ptr) (const int *N, const float *alpha, const float *X, const int *incX, float *Y, const int *incY) nogil
+ctypedef void (*our_dger_ptr) (const int *N, const int *N, const int *alpha, const float *X, const int *incX, float *Y, const int *incY, float **A, const int *N) nogil
+ctypedef void (*our_dgemm_ptr) (const char *transa, const char *transb, const int *M, const int *N, const int *K, const float *alpha, const float *A, const int *ldA, float **B, const int *ldB, const float *beta, float *C, const int *ldC) nogil
 
 cdef our_dot_ptr our_dot
 cdef our_saxpy_ptr our_saxpy
-
+cdef our_dger_ptr our_dger
+cdef our_dgemm_ptr our_dgemm
 
 cdef struct Word2VecConfig:
     int hs, negative, sample, compute_loss, size, window, cbow_mean, workers
