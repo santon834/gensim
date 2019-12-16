@@ -400,6 +400,76 @@ def train_document_dbow(model, doc_words, doctag_indexes, alpha, work=None,
 
     return result
 
+def train_document_dbow_lda(model, doc_words, doctag_indexes, alpha, work=None,
+                            train_words=False, learn_doctags=True, learn_words=True, learn_hidden=True, learn_lda=False,
+                            word_vectors=None, word_locks=None, doctag_vectors=None, doctag_locks=None, lda_vectors=None):
+
+    cdef Doc2VecConfig c
+
+    cdef int i, j
+    cdef long result = 0
+
+    init_d2v_config(&c, model, alpha, learn_doctags, learn_words, learn_hidden, train_words=train_words, work=work,
+                    neu1=None, word_vectors=word_vectors, word_locks=word_locks,
+                    doctag_vectors=doctag_vectors, doctag_locks=doctag_locks, learn_lda=learn_lda)
+
+    c.doctag_len = <int>min(MAX_DOCUMENT_LEN, len(doctag_indexes))
+
+    vlookup = model.wv.vocab
+    i = 0
+    for token in doc_words:
+        predict_word = vlookup[token] if token in vlookup else None
+        if predict_word is None:  # shrink document to leave out word
+            continue  # leaving i unchanged
+        if c.sample and predict_word.sample_int < random_int32(&c.next_random):
+            continue
+        c.indexes[i] = predict_word.index
+        if c.hs:
+            c.codelens[i] = <int>len(predict_word.code)
+            c.codes[i] = <np.uint8_t *>np.PyArray_DATA(predict_word.code)
+            c.points[i] = <np.uint32_t *>np.PyArray_DATA(predict_word.point)
+        result += 1
+        i += 1
+        if i == MAX_DOCUMENT_LEN:
+            break  # TODO: log warning, tally overflow?
+    c.document_len = i
+
+    if c.train_words:
+        # single randint() call avoids a big thread-synchronization slowdown
+        for i, item in enumerate(model.random.randint(0, c.window, c.document_len)):
+            c.reduced_windows[i] = item
+
+    for i in range(c.doctag_len):
+        c.doctag_indexes[i] = doctag_indexes[i]
+        result += 1
+
+    # release GIL & train on the document
+    with nogil:
+        for i in range(c.document_len):
+            if c.train_words:  # simultaneous skip-gram wordvec-training
+                j = i - c.window + c.reduced_windows[i]
+                if j < 0:
+                    j = 0
+                k = i + c.window + 1 - c.reduced_windows[i]
+                if k > c.document_len:
+                    k = c.document_len
+                for j in range(j, k):
+                    if j == i:
+                        continue
+                    # we reuse the DBOW function, as it is equivalent to skip-gram for this purpose
+                    c.next_random = fast_document_dbow_neg(c.negative, c.cum_table, c.cum_table_len, c.word_vectors,
+                                                           c.syn1neg, c.layer1_size, c.indexes[i], c.indexes[j],
+                                                           c.alpha, c.work, c.next_random, c.learn_words,
+                                                           c.learn_hidden, c.word_locks)
+
+            # docvec-training
+            for j in range(c.doctag_len):
+                c.next_random = fast_document_dbow_neg_lda(c.negative, c.cum_table, c.cum_table_len, c.doctag_vectors,
+                                                           c.syn1neg, c.layer1_size, c.indexes[i], c.doctag_indexes[j],
+                                                           c.alpha, c.work, c.next_random, c.learn_doctags,
+                                                           c.learn_hidden, c.doctag_locks, c.lda_vectors, c.learn_lda)
+
+    return result
 
 def train_document_dm(model, doc_words, doctag_indexes, alpha, work=None, neu1=None,
                       learn_doctags=True, learn_words=True, learn_hidden=True,
