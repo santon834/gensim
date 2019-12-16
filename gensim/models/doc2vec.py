@@ -718,10 +718,11 @@ class Doc2Vec(BaseWordEmbeddingsModel):
         """
         work, neu1 = inits
         tally = 0
-        vector_size = self.docvecs.vector_size  #TODO
-        lda_vectors = zeros((vector_size, vector_size), dtype=REAL) #TODO
-        for i in range(len(vector_size)):  #TODO
-            lda_vectors[i] = self.seeded_vector(str(i), vector_size)  #TODO
+        if self.sg_lda:
+            vector_size = self.docvecs.vector_size  #TODO
+            lda_vectors = zeros((vector_size, vector_size), dtype=REAL) #TODO
+            for i in range(len(vector_size)):  #TODO
+                lda_vectors[i] = self.seeded_vector(str(i), vector_size)  #TODO
         for doc in job:
             doctag_indexes = self.vocabulary.indexed_doctags(doc.tags, self.docvecs)
             doctag_vectors = self.docvecs.vectors_docs
