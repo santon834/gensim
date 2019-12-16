@@ -68,7 +68,7 @@ cdef unsigned long long fast_document_dbow_neg_lda(
         const int negative, np.uint32_t *cum_table, unsigned long long cum_table_len,
         REAL_t *context_vectors, REAL_t *syn1neg, const int size, const np.uint32_t word_index,
         const np.uint32_t context_index, const REAL_t alpha, REAL_t *work,
-        unsigned long long next_random, int learn_context, int learn_hidden, REAL_t *context_locks, REAL_t *lda_vectors, int learn_lda) nogil
+        unsigned long long next_random, int learn_context, int learn_hidden, REAL_t *context_locks, REAL_t *lda_vectors) nogil
 
 
 cdef void fast_document_dm_hs(
