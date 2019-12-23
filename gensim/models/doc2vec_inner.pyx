@@ -269,7 +269,7 @@ cdef unsigned long long fast_document_dmc_neg(
 
 cdef init_d2v_config(Doc2VecConfig *c, model, alpha, learn_doctags, learn_words, learn_hidden,
                      train_words=False, work=None, neu1=None, word_vectors=None, word_locks=None, doctag_vectors=None,
-                     doctag_locks=None, docvecs_count=0):
+                     doctag_locks=None, lda_vectors=None, docvecs_count=0):
     c[0].hs = model.hs
     c[0].negative = model.negative
     c[0].sample = (model.vocabulary.sample != 0)
@@ -303,6 +303,8 @@ cdef init_d2v_config(Doc2VecConfig *c, model, alpha, learn_doctags, learn_words,
     if doctag_locks is None:
        doctag_locks = model.trainables.vectors_docs_lockf
     c[0].doctag_locks = <REAL_t *>(np.PyArray_DATA(doctag_locks))
+    if lda_vectors is not None:
+        c[0].lda_vectors = <REAL_t *>(np.PyArray_DATA(lda_vectors))
 
     if c[0].hs:
         c[0].syn1 = <REAL_t *>(np.PyArray_DATA(model.trainables.syn1))
@@ -378,7 +380,7 @@ def train_document_dbow(model, doc_words, doctag_indexes, alpha, work=None,
 
     init_d2v_config(&c, model, alpha, learn_doctags, learn_words, learn_hidden, train_words=train_words, work=work,
                     neu1=None, word_vectors=word_vectors, word_locks=word_locks,
-                    doctag_vectors=doctag_vectors, doctag_locks=doctag_locks)
+                    doctag_vectors=doctag_vectors, doctag_locks=doctag_locks, lda_vectors=lda_vectors)
 
     c.doctag_len = <int>min(MAX_DOCUMENT_LEN, len(doctag_indexes))
 
@@ -444,7 +446,7 @@ def train_document_dbow(model, doc_words, doctag_indexes, alpha, work=None,
                         c.next_random = fast_document_dbow_neg_lda(c.negative, c.cum_table, c.cum_table_len, c.doctag_vectors,
                                                                    c.syn1neg, c.layer1_size, c.indexes[i], c.doctag_indexes[j],
                                                                    c.alpha, c.work, c.next_random, c.learn_doctags,
-                                                                   c.learn_hidden, c.doctag_locks, lda_vectors)
+                                                                   c.learn_hidden, c.doctag_locks, c.lda_vectors)
                     else:
                         c.next_random = fast_document_dbow_neg(c.negative, c.cum_table, c.cum_table_len, c.doctag_vectors,
                                                                c.syn1neg, c.layer1_size, c.indexes[i], c.doctag_indexes[j],

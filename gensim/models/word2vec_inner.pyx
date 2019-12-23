@@ -33,7 +33,7 @@ DEF MAX_SENTENCE_LEN = 10000
 cdef scopy_ptr scopy=<scopy_ptr>PyCObject_AsVoidPtr(fblas.scopy._cpointer)  # y = x
 cdef saxpy_ptr saxpy=<saxpy_ptr>PyCObject_AsVoidPtr(fblas.saxpy._cpointer)  # y += alpha * x
 cdef dger_ptr dger=<dger_ptr>PyCObject_AsVoidPtr(fblas.dger._cpointer)  # A += alpha * x * y'
-cdef dger_ptr dgemm=<dger_ptr>PyCObject_AsVoidPtr(fblas.dgemm._cpointer)  # C = alpha * op(A) * op(B) + beta*C
+cdef dgemm_ptr dgemm=<dgemm_ptr>PyCObject_AsVoidPtr(fblas.dgemm._cpointer)  # C = alpha * op(A) * op(B) + beta*C
 cdef sdot_ptr sdot=<sdot_ptr>PyCObject_AsVoidPtr(fblas.sdot._cpointer)  # float = dot(x, y)
 cdef dsdot_ptr dsdot=<dsdot_ptr>PyCObject_AsVoidPtr(fblas.sdot._cpointer)  # double = dot(x, y)
 cdef snrm2_ptr snrm2=<snrm2_ptr>PyCObject_AsVoidPtr(fblas.snrm2._cpointer)  # sqrt(x^2)
@@ -73,23 +73,23 @@ cdef void our_saxpy_noblas(const int *N, const float *alpha, const float *X, con
     for i from 0 <= i < N[0] by 1:
         Y[i * (incY[0])] = (alpha[0]) * X[i * (incX[0])] + Y[i * (incY[0])]
 
-# for when no blas available
-cdef void our_dger_noblas(const int *N, const int *M, const float *alpha, const float *X, const int *incX, float *Y, const int *incY, float *A, const int *ldA) nogil:
-    cdef int i
-    cdef int j
-    for i from 0 <= i < N[0] by 1:
-        for j from 0 <= j < M[0] by 1:
-            A[i,j] = (alpha[0]) * X[i * (incX[0])] + Y[j * (incY[0])] + A[i,j]
-
-# for when no blas available #TODO
-cdef void our_dgemm_noblas(const char *transa, const char *transb, const int *M, const int *N, const int *K, const float *alpha, const float *A, const int *ldA, const float *B, const int *ldB, const float *beta, float *C, const int *ldC) nogil:
-    cdef int i
-    cdef int j
-    cdef int k
-    for i from 0 <= i < M[0] by 1:
-        for j from 0 <= j < N[0] by 1:
-            for k from 0 <= j < K[0] by 1:
-                C[i,j] = (alpha[0]) * A[i,k] + B[k,j] + beta[0]*C[i,j]
+# # for when no blas available
+# cdef void our_dger_noblas(const int *N, const int *M, const float *alpha, const float *X, const int *incX, float *Y, const int *incY, float *A, const int *ldA) nogil:
+#     cdef int i
+#     cdef int j
+#     for i from 0 <= i < N[0] by 1:
+#         for j from 0 <= j < M[0] by 1:
+#             A[i,j] = (alpha[0]) * X[i * (incX[0])] + Y[j * (incY[0])] + A[i,j]
+#
+# # for when no blas available #TODO
+# cdef void our_dgemm_noblas(const char *transa, const char *transb, const int *M, const int *N, const int *K, const float *alpha, const float *A, const int *ldA, const float *B, const int *ldB, const float *beta, float *C, const int *ldC) nogil:
+#     cdef int i
+#     cdef int j
+#     cdef int k
+#     for i from 0 <= i < M[0] by 1:
+#         for j from 0 <= j < N[0] by 1:
+#             for k from 0 <= k < K[0] by 1:
+#                 C[i,j] = (alpha[0]) * A[i,k] + B[k,j] + beta[0]*C[i,j]
 
 cdef void w2v_fast_sentence_sg_hs(
     const np.uint32_t *word_point, const np.uint8_t *word_code, const int codelen,
@@ -948,8 +948,8 @@ def init():
         # actually, the BLAS is so messed up we'll probably have segfaulted above and never even reach here
         our_dot = our_dot_noblas
         our_saxpy = our_saxpy_noblas
-        our_dger = our_dger_noblas
-        our_dgemm = our_dgemm_noblas
+        # our_dger = our_dger_noblas
+        # our_dgemm = our_dgemm_noblas
         return 2
 
 FAST_VERSION = init()  # initialize the module
